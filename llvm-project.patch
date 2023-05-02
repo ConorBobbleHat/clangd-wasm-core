@@ -1,0 +1,79 @@
+diff --git a/clang-tools-extra/clangd/JSONTransport.cpp b/clang-tools-extra/clangd/JSONTransport.cpp
+index 254e54ad5..4fc9f930c 100644
+--- a/clang-tools-extra/clangd/JSONTransport.cpp
++++ b/clang-tools-extra/clangd/JSONTransport.cpp
+@@ -59,6 +59,42 @@ llvm::Error decodeError(const llvm::json::Object &O) {
+   return error(Msg.str());
+ }
+ 
++
++#include <emscripten.h>
++
++EM_ASYNC_JS(char*, getRawMessage, (), {
++  return new Promise((resolve) => {
++    function resolveNextMessage() {
++      let nextMessageText = JSON.stringify(Module.messageBuf.shift());
++
++      let lenBytes = lengthBytesUTF8(nextMessageText) + 1; // +1 for null terminator
++      let stringPointer = _malloc(lenBytes);
++      stringToUTF8(nextMessageText, stringPointer, lenBytes);
++
++      resolve(stringPointer);
++    }
++
++    if (Module.messageBuf.length == 0) {
++      let interval = setInterval(() => {
++        if (Module.messageBuf.length != 0) {
++          clearInterval(interval);
++          resolveNextMessage();
++        }
++      }, 10);
++    } else {
++      resolveNextMessage();
++    }
++  });
++})
++
++bool webReadRawMessage(std::string &JSON) {
++  char* rawMessage = getRawMessage();
++  JSON.assign(rawMessage);
++  free(rawMessage);
++  return true;
++}
++
++
+ class JSONTransport : public Transport {
+ public:
+   JSONTransport(std::FILE *In, llvm::raw_ostream &Out,
+@@ -101,14 +137,11 @@ public:
+ 
+   llvm::Error loop(MessageHandler &Handler) override {
+     std::string JSON; // Messages may be large, reuse same big buffer.
+-    while (!feof(In)) {
++    while (true) {
+       if (shutdownRequested())
+         return error(std::make_error_code(std::errc::operation_canceled),
+                      "Got signal, shutting down");
+-      if (ferror(In))
+-        return llvm::errorCodeToError(
+-            std::error_code(errno, std::system_category()));
+-      if (readRawMessage(JSON)) {
++      if (webReadRawMessage(JSON)) {
+         ThreadCrashReporter ScopedReporter([&JSON]() {
+           auto &OS = llvm::errs();
+           OS << "Signalled while processing message:\n";
+diff --git a/clang/lib/Driver/Job.cpp b/clang/lib/Driver/Job.cpp
+index f63763eff..580a41fbd 100644
+--- a/clang/lib/Driver/Job.cpp
++++ b/clang/lib/Driver/Job.cpp
+@@ -379,8 +379,8 @@ int CC1Command::Execute(ArrayRef<llvm::Optional<StringRef>> Redirects,
+   // FIXME: Currently, if there're more than one job, we disable
+   // -fintegrate-cc1. If we're no longer a integrated-cc1 job, fallback to
+   // out-of-process execution. See discussion in https://reviews.llvm.org/D74447
+-  if (!InProcess)
+-    return Command::Execute(Redirects, ErrMsg, ExecutionFailed);
++  // if (!InProcess)
++  //   return Command::Execute(Redirects, ErrMsg, ExecutionFailed);
+ 
+   PrintFileNames();
+ 
