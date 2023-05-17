@@ -1,3 +1,9 @@
+.cache/
 llvm-project/
+
 build/
 build-native/
+build-small/
+
+pkg/dist/
+pkg-small/dist/

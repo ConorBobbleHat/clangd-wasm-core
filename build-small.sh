@@ -4,7 +4,7 @@ TOP_LEVEL=$(dirname $0)
 TOP_LEVEL=$(realpath "$TOP_LEVEL")
 
 LLVM_SRC=$TOP_LEVEL/llvm-project
-LLVM_BUILD=$TOP_LEVEL/build
+LLVM_BUILD=$TOP_LEVEL/build-small
 LLVM_NATIVE=$TOP_LEVEL/build-native
 
 if [ ! -d $LLVM_SRC/ ]; then 
@@ -40,7 +40,7 @@ if [ ! -d $LLVM_BUILD/ ]; then
     " emcmake cmake -G Ninja \
         -S $LLVM_SRC/llvm/ \
         -B $LLVM_BUILD/ \
-        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
         -DLLVM_TARGETS_TO_BUILD="" \
         -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
         -DLLVM_ENABLE_DUMP=OFF \
@@ -57,6 +57,6 @@ fi
 
 cmake --build $LLVM_BUILD --target clangd -j12
 
-rm -rf pkg/dist
-mkdir pkg/dist
-cp build/bin/clangd* pkg/dist
+rm -rf pkg-small/dist
+mkdir pkg-small/dist
+cp build/bin/clangd* pkg-small/dist

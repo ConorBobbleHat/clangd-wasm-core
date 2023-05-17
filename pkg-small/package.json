@@ -1,0 +1,19 @@
+{
+  "name": "@clangd-wasm/core-small",
+  "version": "15.0.7",
+  "main": "dist/clangd.js",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConorBobbleHat/clangd-wasm-core.git"
+  },
+  "author": "ConorBobbleHat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ConorBobbleHat/clangd-wasm-core/issues"
+  },
+  "homepage": "https://github.com/ConorBobbleHat/clangd-wasm-core#readme",
+  "description": ""
+}
